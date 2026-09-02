@@ -39,7 +39,7 @@ test('Cancel pet type update', async ({ page }) => {
   await expect(petTextBox).toHaveValue('dog')
 })
 
-test.only('Validation of pet type name is required', async ({ page }) => {
+test('Validation of pet type name is required', async ({ page }) => {
   const lizardPetRow = page.locator('tbody tr').filter({ has: page.locator('input[id="2"]') })
   const editButton = lizardPetRow.getByRole('button', { name: 'Edit' })
   await editButton.click()
