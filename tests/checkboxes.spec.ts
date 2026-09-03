@@ -4,24 +4,22 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('.title')).toHaveText('Welcome to Petclinic')
   await page.getByText('Veterinarians').click()
-  await page.locator('a', { hasText: 'All' }).click()
-  await expect(page.locator('h2')).toHaveText('Veterinarians')
+  await page.getByRole('link', { name: 'All' }).click()
+  await expect(page.getByRole('heading')).toHaveText('Veterinarians')
 })
 
 test('Validate selected specialities', async ({ page }) => {
 
-  const veternaryToSelect = page.getByRole('row').filter({ hasText: 'Helen Leary' })
-  await veternaryToSelect.getByRole('button', { name: 'Edit Vet' }).click()
-  await page.waitForResponse('**/vets/**')
+  const helenLearyRow = page.getByRole('row', { name: 'Helen Leary' })
+  await helenLearyRow.getByRole('button', { name: 'Edit Vet' }).click()
 
   const selectedSpecialties = page.locator('.selected-specialties')
   await expect(selectedSpecialties).toHaveText('radiology')
 
   await selectedSpecialties.click()
-  const specialityCheckboxes = page.locator('.dropdown-content div')
-  const radiologyCheckbox = specialityCheckboxes.locator('#radiology')
-  const surgeryCheckbox = specialityCheckboxes.locator('#surgery')
-  const dentistryCheckbox = specialityCheckboxes.locator('#dentistry')
+  const radiologyCheckbox = page.getByRole('checkbox', { name: 'radiology' })
+  const surgeryCheckbox = page.getByRole('checkbox', { name: 'surgery' })
+  const dentistryCheckbox = page.getByRole('checkbox', { name: 'dentistry' })
 
   await expect(radiologyCheckbox).toBeChecked()
   await expect(surgeryCheckbox).not.toBeChecked()
@@ -41,18 +39,16 @@ test('Validate selected specialities', async ({ page }) => {
 
 test('Select all specialities', async ({ page }) => {
 
-  const veternaryToSelect = page.getByRole('row').filter({ hasText: 'Rafael Ortega' })
-  await veternaryToSelect.getByRole('button', { name: 'Edit Vet' }).click()
-  await page.waitForResponse('**/vets/**')
+  const rafaelOrtegaRow = page.getByRole('row', { name: 'Rafael Ortega' })
+  await rafaelOrtegaRow.getByRole('button', { name: 'Edit Vet' }).click()
 
   const selectedSpecialties = page.locator('.selected-specialties')
   await expect(selectedSpecialties).toHaveText('surgery')
 
   await selectedSpecialties.click()
-  const specialityCheckboxes = page.locator('.dropdown-content div')
-  const radiologyCheckbox = specialityCheckboxes.locator('#radiology')
-  const surgeryCheckbox = specialityCheckboxes.locator('#surgery')
-  const dentistryCheckbox = specialityCheckboxes.locator('#dentistry')
+  const radiologyCheckbox = page.getByRole('checkbox', { name: 'radiology' })
+  const surgeryCheckbox = page.getByRole('checkbox', { name: 'surgery' })
+  const dentistryCheckbox = page.getByRole('checkbox', { name: 'dentistry' })
 
   await radiologyCheckbox.check()
   await dentistryCheckbox.check()
@@ -67,18 +63,16 @@ test('Select all specialities', async ({ page }) => {
 
 test('Unselect all specialities', async ({ page }) => {
 
-  const veternaryToSelect = page.getByRole('row').filter({ hasText: 'Linda Douglas' })
-  await veternaryToSelect.getByRole('button', { name: 'Edit Vet' }).click()
-  await page.waitForResponse('**/vets/**')
+  const lindaDouglasRow = page.getByRole('row', { name: 'Linda Douglas' })
+  await lindaDouglasRow.getByRole('button', { name: 'Edit Vet' }).click()
 
   const selectedSpecialties = page.locator('.selected-specialties')
   await expect(selectedSpecialties).toHaveText('dentistry, surgery')
 
   await selectedSpecialties.click()
-  const specialityCheckboxes = page.locator('.dropdown-content div')
-  const radiologyCheckbox = specialityCheckboxes.locator('#radiology')
-  const surgeryCheckbox = specialityCheckboxes.locator('#surgery')
-  const dentistryCheckbox = specialityCheckboxes.locator('#dentistry')
+  const radiologyCheckbox = page.getByRole('checkbox', { name: 'radiology' })
+  const surgeryCheckbox = page.getByRole('checkbox', { name: 'surgery' })
+  const dentistryCheckbox = page.getByRole('checkbox', { name: 'dentistry' })
 
   await radiologyCheckbox.uncheck()
   await surgeryCheckbox.uncheck()
