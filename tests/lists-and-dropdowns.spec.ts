@@ -18,30 +18,28 @@ test('Validate selected pet types from the list', async ({ page }) => {
   await expect(page.locator('#owner_name')).toHaveValue(ownerName)
   await expect(page.locator('#type1')).toHaveValue('cat')
 
-  for (const petTypeOption of await page.locator('option').all()) {
-    const petType = await petTypeOption.getAttribute('value')
-    await page.locator('select').selectOption(petType)
-    await page.waitForTimeout(1000)
-    await expect(page.locator('#type1')).toHaveValue(petType!)
+  for (const petTypeValue of await page.locator('option').allInnerTexts()) {
+    await page.locator('select').selectOption(petTypeValue)
+    await expect(page.locator('#type1')).toHaveValue(petTypeValue)
   }
 })
 
 test('Validate the pet type update', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Eduardo Rodriquez' }).click()
-  const petName = 'Rosy'
-  await page.locator('td', { hasText: petName }).getByRole('button', { name: 'Edit Pet' }).click()
-  await expect(page.locator('#name')).toHaveValue(petName)
+  const petRosySection = page.locator('td', { hasText: 'Rosy' })
+  await petRosySection.getByRole('button', { name: 'Edit Pet' }).click()
+  await expect(page.locator('#name')).toHaveValue('Rosy')
   await expect(page.locator('#type1')).toHaveValue('dog')
   await page.locator('select').selectOption('bird')
   await expect(page.locator('#type1')).toHaveValue('bird')
   await page.getByRole('button', { name: 'Update Pet' }).click()
-  await expect(page.locator('td', { hasText: petName }).locator('dd').nth(2)).toHaveText('bird')
+  await expect(petRosySection.locator('dd').nth(2)).toHaveText('bird')
 
   //updating it back to its default value
-  await page.locator('td', { hasText: petName }).getByRole('button', { name: 'Edit Pet' }).click()
+  await petRosySection.getByRole('button', { name: 'Edit Pet' }).click()
   await expect(page.locator('#type1')).toHaveValue('bird')
   await page.locator('select').selectOption('dog')
   await page.getByRole('button', { name: 'Update Pet' }).click()
-  await expect(page.locator('td', { hasText: petName }).locator('dd').nth(2)).toHaveText('dog')
+  await expect(petRosySection.locator('dd').nth(2)).toHaveText('dog')
 })
