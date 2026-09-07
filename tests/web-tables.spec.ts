@@ -1,0 +1,135 @@
+import { test, expect } from '@playwright/test';
+import { log } from 'node:console';
+
+test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('.title')).toHaveText('Welcome to Petclinic')
+})
+
+test.describe('Testing Owners Page', () => {
+
+    test.beforeEach(async ({ page }) => {
+        await page.getByText('Owners').click()
+        await page.getByRole('link', { name: 'Search' }).click()
+        await expect(page.getByRole('heading')).toHaveText('Owners')
+    })
+
+    test('Validate the pet name and the city of the owner', async ({ page }) => {
+        await page.getByRole('link', { name: 'Jeff Black' }).click()
+        await expect(page.getByRole('row', { name: 'City' }).locator('td')).toHaveText('Monona')
+        await expect(page.locator('app-pet-list')).toContainText('Lucky')
+    })
+
+    test('Validate the owners count of the Madison city', async ({ page }) => {
+        await expect(page.getByRole('row', { name: 'Madison' })).toHaveCount(4)
+    })
+
+    test('Validate search by last name', async ({ page }) => {
+
+        const lastNamesToSearch = ['Black', 'Davis', 'Es', 'Playwright']
+
+        for (const lastNameToSearch of lastNamesToSearch) {
+            await page.getByRole('textbox').fill(lastNameToSearch)
+            await page.getByRole('button', { name: 'Find Owner' }).click()
+            await page.waitForResponse('**/owners?lastName**')
+            const ownersName = await page.getByRole('row').getByRole('link').allInnerTexts()
+
+            /**
+             * Checking if Owners with the searched last name exist or not
+             * If it does then loop through all the rows to check if the Find Owner button has filtered out correctly with the last name
+             */
+            if (ownersName.length > 0) {
+                for (const ownerName of ownersName) {
+                    const names = ownerName.split(' ')
+                    expect(names[names.length - 1]).toContain(lastNameToSearch)
+                }
+            } else {
+                expect(await page.getByText(`No owners with LastName starting with "${lastNameToSearch}"`).isVisible()).toBeTruthy()
+            }
+        }
+    })
+
+    test('Validate phone number and pet name on the Owner Information page', async ({ page }) => {
+        const phoneNumber = '6085552765'
+        const ownerWithPhoneNumber = page.getByRole('row', { name: phoneNumber })
+        const petOwned = await ownerWithPhoneNumber.getByRole('row').textContent()
+        await ownerWithPhoneNumber.getByRole('link').click()
+        await expect(page.getByRole('row', { name: 'Telephone' })).toContainText(phoneNumber)
+        await expect(page.locator('app-pet-list')).toContainText(petOwned!)
+    })
+
+    test('Validate pets of the Madison city', async ({ page }) => {
+        const rowsWithMadisonCityOwners = page.getByRole('row', { name: 'Madison' }).getByRole('row')
+        await rowsWithMadisonCityOwners.first().waitFor({ state: 'visible' })
+        const petsInMadisonCity = await rowsWithMadisonCityOwners.allInnerTexts()
+        expect(petsInMadisonCity).toEqual(['Leo', 'George', 'Mulligan', 'Freddy'])
+    })
+})
+
+test('Validate speciality update', async ({ page }) => {
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    const rafaelOrtegaRow = page.getByRole('row', { name: 'Rafael Ortega' }).locator('td div')
+    await expect(rafaelOrtegaRow).toHaveText('surgery')
+
+    //Updating the Surgery specility to Dermatology and checking if it reflects correctly elsewhere
+    await page.getByRole('link', { name: 'Specialties' }).click()
+    await expect(page.getByRole('heading')).toHaveText('Specialties')
+    await page.getByRole('button', { name: 'Home' }).isEnabled()
+    const secondSpecialityRow = page.getByRole('row').filter({ has: page.locator('[id="1"]') })
+    await secondSpecialityRow.getByRole('button', { name: 'Edit' }).click()
+    await expect(page.getByRole('heading')).toHaveText('Edit Specialty')
+    const editSpecialityTextbox = page.getByRole('textbox')
+    await expect(editSpecialityTextbox).toHaveValue('surgery')
+    await editSpecialityTextbox.fill('dermatology')
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expect(secondSpecialityRow.getByRole('textbox')).toHaveValue('dermatology')
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    await expect(rafaelOrtegaRow).toHaveText('dermatology')
+
+    //reverting the changes
+    await page.getByRole('link', { name: 'Specialties' }).click()
+    await page.getByRole('button', { name: 'Home' }).isEnabled()
+    await secondSpecialityRow.getByRole('button', { name: 'Edit' }).click()
+    await expect(editSpecialityTextbox).toHaveValue('dermatology')
+    await editSpecialityTextbox.fill('surgery')
+    await page.getByRole('button', { name: 'Update' }).click()
+    await expect(secondSpecialityRow.getByRole('textbox')).toHaveValue('surgery')
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    await expect(rafaelOrtegaRow).toHaveText('surgery')
+})
+
+test('Validate speciality lists', async ({ page }) => {
+
+    //adding a new speciality
+    await page.getByRole('link', { name: 'Specialties' }).click()
+    await page.getByRole('button', { name: 'Add' }).click()
+    await page.locator('#name').fill('oncology')
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.locator('[id="3"]')).toHaveValue('oncology')
+    const specialitiesList = []
+    for (const specialityRow of await page.getByRole('row').getByRole('textbox').all())
+        specialitiesList.push(await specialityRow.inputValue())
+
+    //adding the newly added speciality to the veterinarian
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    const sharonJenkinsRow = page.getByRole('row', { name: 'Sharon Jenkins' })
+    await sharonJenkinsRow.getByRole('button', { name: 'Edit Vet' }).click()
+    await page.locator('.dropdown-display').click()
+    const specialtyDropdownValues = await page.locator('.dropdown-content div label').allTextContents()
+    expect(specialitiesList).toEqual(specialtyDropdownValues)
+    await page.getByRole('checkbox', { name: 'oncology' }).check()
+    await page.locator('.dropdown-display').click()
+    await page.getByRole('button', { name: 'Save Vet' }).click()
+    await expect(sharonJenkinsRow.locator('td div')).toHaveText('oncology')
+
+    //reverting the changes
+    await page.getByRole('link', { name: 'Specialties' }).click()
+    await page.getByRole('row').filter({ has: page.locator('[id="3"]') }).getByRole('button', { name: 'Delete' }).click()
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    expect(await sharonJenkinsRow.locator('td div').count()).toEqual(0)
+})
