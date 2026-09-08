@@ -14,8 +14,7 @@ test('Add and delete pet type', async ({ page }) => {
   await expect(page.locator('#name')).toBeVisible()
   await page.locator('#name').fill('pig')
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.waitForResponse('**/pettypes')
-  await expect(page.getByRole('textbox').last()).toHaveValue('pig')
+  await expect(page.getByRole('table').getByRole('textbox').last()).toHaveValue('pig')
 
   // Click on Ok on web browser delete dialog box
   page.on('dialog', dialog => {
