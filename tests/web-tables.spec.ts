@@ -57,7 +57,6 @@ test.describe('Testing Owners Page', () => {
 
     test('Validate pets of the Madison city', async ({ page }) => {
         const petCellsForMadisonRows = page.getByRole('row', { name: 'Madison' }).getByRole('row')
-        // await petCellsForMadisonRows.first().waitFor({ state: 'visible' })
         await expect(petCellsForMadisonRows).toHaveText(['Leo', 'George', 'Mulligan', 'Freddy'])
     })
 
