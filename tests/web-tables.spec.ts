@@ -10,6 +10,7 @@ test.describe('Testing Owners Page', () => {
     test.beforeEach(async ({ page }) => {
         await page.getByText('Owners').click()
         await page.getByRole('link', { name: 'Search' }).click()
+        await page.waitForResponse('**/owners')
         await expect(page.getByRole('heading')).toHaveText('Owners')
     })
 
@@ -28,6 +29,8 @@ test.describe('Testing Owners Page', () => {
         const lastNamesToSearch = ['Black', 'Davis', 'Es', 'Playwright']
 
         for (const lastNameToSearch of lastNamesToSearch) {
+
+            const noOfRowsWithLastNameToSearch = await page.locator('td a', { hasText: ` ${lastNameToSearch}` }).count()
             await page.getByRole('textbox').fill(lastNameToSearch)
             await page.getByRole('button', { name: 'Find Owner' }).click()
             await page.waitForResponse('**/owners?lastName**')
@@ -37,6 +40,8 @@ test.describe('Testing Owners Page', () => {
              * Checking if Owners with the searched last name exist or not
              * If it does then loop through all the rows to check if the Find Owner button has filtered out correctly with the last name
              */
+            expect(await ownersNameCells.count()).toEqual(noOfRowsWithLastNameToSearch)
+
             if (await ownersNameCells.count() > 0) {
                 for (const ownerNameCell of await ownersNameCells.all()) {
                     await expect(ownerNameCell).toContainText(lastNameToSearch)
@@ -44,6 +49,9 @@ test.describe('Testing Owners Page', () => {
             } else {
                 await expect(page.locator('.xd-container div').last()).toHaveText(`No owners with LastName starting with "${lastNameToSearch}"`)
             }
+            await page.getByRole('textbox').clear()
+            await page.getByRole('button', { name: 'Find Owner' }).click()
+            await page.waitForResponse('**/owners')
         }
     })
 
