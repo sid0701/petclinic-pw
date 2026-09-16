@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test'
 import ownerspage from '../test-data/owners-page.json'
+import specialties from '../test-data/specialties.json'
 
 test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+})
+
+test('mocking API request', async ({ page }) => {
     await page.route('**/owners', async route => {
         await route.fulfill({
             body: JSON.stringify(ownerspage)
@@ -12,12 +17,8 @@ test.beforeEach(async ({ page }) => {
             body: JSON.stringify(ownerspage[0])
         })
     })
-    await page.goto('/')
     await page.getByText('Owners').click()
     await page.getByRole('link', { name: 'Search' }).click()
-})
-
-test('mocking API request', async ({ page }) => {
     await expect(page.locator('tbody a')).toHaveCount(2)
     const firstOwnerRow = page.locator('tbody tr').first()
     const ownerName = await firstOwnerRow.locator('a').textContent()
@@ -35,4 +36,18 @@ test('mocking API request', async ({ page }) => {
     await expect(page.locator('app-pet-list dd:first-of-type')).toHaveText(ownerPets)
     const firstPetVisitList = page.locator('app-visit-list').first()
     await expect(firstPetVisitList.locator('table > tr')).toHaveCount(10)
+})
+
+test('Intercept API response', async ({ page }) => {
+    await page.route('**/vets', async route => {
+        const response = await route.fetch()
+        const responseBody = await response.json()
+        responseBody[5].specialties = specialties
+        await route.fulfill({
+            body: JSON.stringify(responseBody)
+        })
+    })
+    await page.getByText('Veterinarians').click()
+    await page.getByRole('link', { name: 'All' }).click()
+    await expect(page.getByRole('row', { name: 'Sharon Jenkins' }).locator('div')).toHaveText(['radiology', 'surgery', 'dentistry', 'pshyciatry', 'cardiology', 'opthamology', 'paediatrics', 'hepatology', 'orthopedics', 'dermatology'])
 })
