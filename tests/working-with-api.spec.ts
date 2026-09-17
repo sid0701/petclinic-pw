@@ -42,7 +42,15 @@ test('Intercept API response', async ({ page }) => {
     await page.route('**/vets', async route => {
         const response = await route.fetch()
         const responseBody = await response.json()
-        responseBody[5].specialties = specialties
+
+        for (const currentResponseObject of responseBody) {
+            const currentFullName = `${currentResponseObject.firstName} ${currentResponseObject.lastName}`
+            if (currentFullName == 'Sharon Jenkins') {
+                currentResponseObject.specialties = specialties
+                break
+            }
+        }
+
         await route.fulfill({
             body: JSON.stringify(responseBody)
         })
